@@ -1,0 +1,22 @@
+{
+  "name": "umbrella-financial-be",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Market-Leader-Technologies/umbrella-financial-be.git"
+  },
+  "author": "Daniel A. Fournier",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Market-Leader-Technologies/umbrella-financial-be/issues"
+  },
+  "homepage": "https://github.com/Market-Leader-Technologies/umbrella-financial-be#readme",
+  "dependencies": {
+    "prisma": "^4.10.0"
+  }
+}

@@ -1,0 +1,119 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("PRODUCTION_DATABASE_URL")
+}
+
+model GhlUser {
+  id                String       @id @unique() @default(uuid()) @db.VarChar(64)
+  firstName         String?      @db.VarChar(128)
+  lastName          String?      @db.VarChar(128)
+  username          String?      @db.VarChar(256)
+  email             String?      @db.VarChar(256)
+  profilePictureUrl String?      @db.VarChar(255)
+  type              String?      @db.VarChar(32)
+  fullName          String?      @db.VarChar(256)
+  phone             String?      @db.VarChar(16)
+  locationId        String?      @db.VarChar(64)
+  profilePicture    String?      @db.VarChar(255)
+  location          GhlLocation? @relation(fields: [locationId], references: [id])
+  User              User[]
+
+  @@index([email])
+  @@index([locationId])
+}
+
+model GhlLocation {
+  id        String       @id @unique() @default(uuid()) @db.VarChar(64)
+  companyId String?      @db.VarChar(64)
+  name      String?      @db.VarChar(256)
+  addressId String?      @db.VarChar(64)
+  logoUrl   String?      @db.VarChar(2048)
+  website   String?      @db.VarChar(2048)
+  timezone  String?      @db.VarChar(64)
+  firstName String?      @db.VarChar(256)
+  lastName  String?      @db.VarChar(256)
+  email     String?      @db.VarChar(512)
+  phone     String?      @db.VarChar(16)
+  ghlApiKey String?      @db.VarChar(512)
+  contacts  GhlContact[]
+  users     GhlUser[]
+  User      User[]
+}
+
+model GhlContact {
+  id               String      @id @unique() @default(uuid()) @db.VarChar(64)
+  firstName        String?     @db.VarChar(256)
+  lastName         String?     @db.VarChar(256)
+  email            String?     @db.VarChar(256)
+  phone            String?     @db.VarChar(16)
+  companyName      String?     @db.VarChar(256)
+  timezone         String?     @db.VarChar(64)
+  locationId       String      @db.VarChar(64)
+  location         GhlLocation @relation(fields: [locationId], references: [id])
+  dnc              Int?        @db.TinyInt
+  type             String?     @db.VarChar(64)
+  source           String?     @db.VarChar(128)
+  assignedUserId   String?     @db.VarChar(64)
+  addressId        String?     @db.VarChar(64)
+  website          String?     @db.VarChar(2048)
+  dateOfBirth      DateTime?   @db.DateTime(0)
+  dateAdded        DateTime    @db.DateTime(0)
+  dateUpdated      DateTime    @db.DateTime(0)
+  ssn              String?     @db.VarChar(16)
+  gender           String?     @db.VarChar(8)
+  keyword          String?     @db.VarChar(64)
+  dateLastActivity DateTime?   @db.DateTime(0)
+  umbrellaUserId   Int
+  umbrellaUser     User        @relation(fields: [umbrellaUserId], references: [id])
+
+  @@index([locationId])
+  @@index([firstName, lastName, locationId])
+  @@index([email, locationId])
+}
+
+model User {
+  id                         Int          @id @unique(map: "id_UNIQUE")
+  affiliatePlan              String?      @db.VarChar(32)
+  affiliatePlanPurchase_date DateTime?    @db.DateTime(0)
+  affiliatePeferralId        String?      @db.VarChar(64)
+  affiliateReferralLink      String?      @db.VarChar(2048)
+  affiliateReferralName      String?      @db.VarChar(64)
+  affiliateReferralPlan      String?      @db.VarChar(32)
+  affiliateReferralUserId    Int?
+  affiliateStatus            String?      @db.VarChar(16)
+  affiliateUrl               String?      @db.VarChar(2048)
+  coachId                    String?      @db.VarChar(64)
+  coachName                  String?      @db.VarChar(64)
+  coachUserId                Int?
+  customerPlan               String?      @db.VarChar(45)
+  customerPlanPurchaseDate   DateTime?    @db.DateTime(0)
+  customerStatus             String?      @db.VarChar(16)
+  email                      String?      @db.VarChar(256)
+  hasCoachTier               Int?         @db.TinyInt
+  hasMentorTier              Int?         @db.TinyInt
+  hasPartnerTier             Int?         @db.TinyInt
+  mentorId                   String?      @db.VarChar(64)
+  mentorName                 String?      @db.VarChar(64)
+  mentorUserId               Int?
+  name                       String?      @db.VarChar(128)
+  partnerId                  String?      @db.VarChar(64)
+  partnerName                String?      @db.VarChar(128)
+  partnerUserId              Int?
+  phoneNumber                String?      @db.VarChar(16)
+  referredByAffiliate        Int?         @db.TinyInt
+  transactionTotal           Float?
+  primaryGhlLocationId       String?      @db.VarChar(32)
+  primaryGhlLocation         GhlLocation? @relation(fields: [ghlLocationId], references: [id])
+  ghlUserId                  String?      @db.VarChar(32)
+  ghlUser                    GhlUser?     @relation(fields: [ghlUserId], references: [id])
+  ghlSuperCorporateContactId String?      @db.VarChar(32)
+  contacts                   GhlContact[]
+  username                   String?      @db.VarChar(128)
+  dateOfBirth                DateTime?    @db.DateTime(0)
+  ghlLocationId              String?      @db.VarChar(64)
+  ghlContactId               String       @db.VarChar(64)
+}
