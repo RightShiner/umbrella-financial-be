@@ -77,47 +77,26 @@ model GhlContact {
 
 model User {
   id                         String       @id @unique() @default(uuid()) @db.VarChar(64)
-  uigUserid                  Int
-  affiliatePlan              String?      @db.VarChar(32)
-  affiliatePlanPurchase_date DateTime?    @db.DateTime(0)
-  affiliatePeferralId        String?      @db.VarChar(64)
-  affiliateReferralLink      String?      @db.VarChar(2048)
-  affiliateReferralName      String?      @db.VarChar(64)
-  affiliateReferralPlan      String?      @db.VarChar(32)
-  affiliateReferralUserId    Int?
+  uigUserId                  Int
+  type                       UserType
+  referredByUserId           String?      @db.VarChar(64)
+  referredByUser             User?        @relation("referredByUser", fields: [referredByUserId], references: [id])
+  referredUsers              User[]       @relation("referredByUser")
   affiliateStatus            String?      @db.VarChar(16)
   affiliateUrl               String?      @db.VarChar(2048)
-  coachId                    String?      @db.VarChar(64)
-  coachName                  String?      @db.VarChar(64)
-  coachUserId                Int?
-  customerPlan               String?      @db.VarChar(45)
-  customerPlanPurchaseDate   DateTime?    @db.DateTime(0)
-  customerStatus             String?      @db.VarChar(16)
-  email                      String?      @db.VarChar(256)
-  hasCoachTier               Boolean
-  hasMentorTier              Boolean
-  hasPartnerTier             Boolean
-  mentorId                   String?      @db.VarChar(64)
-  mentorName                 String?      @db.VarChar(64)
-  mentorUserId               Int?
   name                       String?      @db.VarChar(128)
-  partnerId                  String?      @db.VarChar(64)
-  partnerName                String?      @db.VarChar(128)
-  partnerUserId              Int?
+  email                      String?      @db.VarChar(256)
   phoneNumber                String?      @db.VarChar(16)
-  referredByAffiliate        Boolean
-  transactionTotal           Float?
+  username                   String?      @db.VarChar(128)
+  dateOfBirth                DateTime?    @db.DateTime(0)
   primaryGhlLocationId       String?      @db.VarChar(32)
-  primaryGhlLocation         GhlLocation? @relation(fields: [ghlLocationId], references: [id])
+  primaryGhlLocation         GhlLocation? @relation(fields: [primaryGhlLocationId], references: [id])
   ghlUserId                  String?      @db.VarChar(32)
   ghlUser                    GhlUser?     @relation(fields: [ghlUserId], references: [id])
   ghlSuperCorporateContactId String?      @db.VarChar(32)
-  contacts                   GhlContact[]
-  username                   String?      @db.VarChar(128)
-  dateOfBirth                DateTime?    @db.DateTime(0)
-  ghlLocationId              String?      @db.VarChar(64)
-  ghlContactId               String       @db.VarChar(64)
-  account                    Account[]
+  ghlContacts                GhlContact[]
+  transactionTotal           Decimal
+  accounts                   Account[]
   commissionAccountId        String       @db.VarChar(64)
   purchaseAccountId          String       @db.VarChar(64)
   purchases                  Purchase[]
@@ -128,8 +107,8 @@ model Product {
   id                          String           @id @unique() @default(uuid()) @db.VarChar(64)
   name                        String           @db.VarChar(256)
   isRecurring                 Boolean          @default(false)
-  periodLength                Int?
-  periodUnit                  RecurringPeriod?
+  billingPeriodLength         Int?
+  billingPeriodUnit           RecurringPeriod?
   trialPeriodLength           Int?
   trialPeriodUnit             RecurringPeriod?
   retailPrice                 Decimal
@@ -163,14 +142,6 @@ model Purchase {
   User      User    @relation(fields: [userId], references: [id])
 }
 
-//Enums
-enum RecurringPeriod {
-  DAY
-  WEEK
-  MONTH
-  YEAR
-}
-
 model Account {
   id           String        @id @unique() @default(uuid()) @db.VarChar(64)
   name         String        @db.VarChar(256)
@@ -187,4 +158,20 @@ model Transaction {
   amount      Decimal
   account     Account @relation(fields: [accountId], references: [id])
   accountId   String  @db.VarChar(64)
+}
+
+//Enums
+enum RecurringPeriod {
+  DAY
+  WEEK
+  MONTH
+  YEAR
+}
+
+enum UserType {
+  CUSTOMER
+  MENTOR
+  COACH
+  PARTNER
+  CORPORATE_PARTNER
 }
