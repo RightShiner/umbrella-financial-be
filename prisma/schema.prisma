@@ -79,6 +79,8 @@ model User {
   id                         String       @id @unique() @default(uuid()) @db.VarChar(64)
   uigUserId                  Int
   type                       UserType
+  role                       UserRole
+  hashPassword               String
   referredByUserId           String?      @db.VarChar(64)
   referredByUser             User?        @relation("referredByUser", fields: [referredByUserId], references: [id])
   referredUsers              User[]       @relation("referredByUser")
@@ -101,6 +103,7 @@ model User {
   purchaseAccountId          String       @db.VarChar(64)
   purchases                  Purchase[]
   commissions                Commission[]
+  sessions                   Session[]
 }
 
 model Product {
@@ -160,6 +163,12 @@ model Transaction {
   accountId   String  @db.VarChar(64)
 }
 
+model Session {
+  id     String @id @unique() @default(uuid()) @db.VarChar(64)
+  user   User   @relation(fields: [userId], references: [id])
+  userId String @db.VarChar(64)
+}
+
 //Enums
 enum RecurringPeriod {
   DAY
@@ -174,4 +183,9 @@ enum UserType {
   COACH
   PARTNER
   CORPORATE_PARTNER
+}
+
+enum UserRole {
+  ADMIN
+  USER
 }
