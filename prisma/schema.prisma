@@ -54,7 +54,7 @@ model GhlContact {
   timezone         String?     @db.VarChar(64)
   locationId       String      @db.VarChar(64)
   location         GhlLocation @relation(fields: [locationId], references: [id])
-  dnc              Int?        @db.TinyInt
+  dnc              Boolean
   type             String?     @db.VarChar(64)
   source           String?     @db.VarChar(128)
   assignedUserId   String?     @db.VarChar(64)
@@ -67,7 +67,7 @@ model GhlContact {
   gender           String?     @db.VarChar(8)
   keyword          String?     @db.VarChar(64)
   dateLastActivity DateTime?   @db.DateTime(0)
-  umbrellaUserId   Int
+  umbrellaUserId   String      @db.VarChar(64)
   umbrellaUser     User        @relation(fields: [umbrellaUserId], references: [id])
 
   @@index([locationId])
@@ -76,44 +76,102 @@ model GhlContact {
 }
 
 model User {
-  id                         Int          @id @unique(map: "id_UNIQUE")
-  affiliatePlan              String?      @db.VarChar(32)
-  affiliatePlanPurchase_date DateTime?    @db.DateTime(0)
-  affiliatePeferralId        String?      @db.VarChar(64)
-  affiliateReferralLink      String?      @db.VarChar(2048)
-  affiliateReferralName      String?      @db.VarChar(64)
-  affiliateReferralPlan      String?      @db.VarChar(32)
-  affiliateReferralUserId    Int?
+  id                         String       @id @unique() @default(uuid()) @db.VarChar(64)
+  uigUserId                  Int
+  type                       UserType
+  referredByUserId           String?      @db.VarChar(64)
+  referredByUser             User?        @relation("referredByUser", fields: [referredByUserId], references: [id])
+  referredUsers              User[]       @relation("referredByUser")
   affiliateStatus            String?      @db.VarChar(16)
   affiliateUrl               String?      @db.VarChar(2048)
-  coachId                    String?      @db.VarChar(64)
-  coachName                  String?      @db.VarChar(64)
-  coachUserId                Int?
-  customerPlan               String?      @db.VarChar(45)
-  customerPlanPurchaseDate   DateTime?    @db.DateTime(0)
-  customerStatus             String?      @db.VarChar(16)
-  email                      String?      @db.VarChar(256)
-  hasCoachTier               Int?         @db.TinyInt
-  hasMentorTier              Int?         @db.TinyInt
-  hasPartnerTier             Int?         @db.TinyInt
-  mentorId                   String?      @db.VarChar(64)
-  mentorName                 String?      @db.VarChar(64)
-  mentorUserId               Int?
   name                       String?      @db.VarChar(128)
-  partnerId                  String?      @db.VarChar(64)
-  partnerName                String?      @db.VarChar(128)
-  partnerUserId              Int?
+  email                      String?      @db.VarChar(256)
   phoneNumber                String?      @db.VarChar(16)
-  referredByAffiliate        Int?         @db.TinyInt
-  transactionTotal           Float?
+  username                   String?      @db.VarChar(128)
+  dateOfBirth                DateTime?    @db.DateTime(0)
   primaryGhlLocationId       String?      @db.VarChar(32)
-  primaryGhlLocation         GhlLocation? @relation(fields: [ghlLocationId], references: [id])
+  primaryGhlLocation         GhlLocation? @relation(fields: [primaryGhlLocationId], references: [id])
   ghlUserId                  String?      @db.VarChar(32)
   ghlUser                    GhlUser?     @relation(fields: [ghlUserId], references: [id])
   ghlSuperCorporateContactId String?      @db.VarChar(32)
-  contacts                   GhlContact[]
-  username                   String?      @db.VarChar(128)
-  dateOfBirth                DateTime?    @db.DateTime(0)
-  ghlLocationId              String?      @db.VarChar(64)
-  ghlContactId               String       @db.VarChar(64)
+  ghlContacts                GhlContact[]
+  transactionTotal           Decimal
+  accounts                   Account[]
+  commissionAccountId        String       @db.VarChar(64)
+  purchaseAccountId          String       @db.VarChar(64)
+  purchases                  Purchase[]
+  commissions                Commission[]
+}
+
+model Product {
+  id                          String           @id @unique() @default(uuid()) @db.VarChar(64)
+  name                        String           @db.VarChar(256)
+  isRecurring                 Boolean          @default(false)
+  billingPeriodLength         Int?
+  billingPeriodUnit           RecurringPeriod?
+  trialPeriodLength           Int?
+  trialPeriodUnit             RecurringPeriod?
+  retailPrice                 Decimal
+  commissionableValueShare    Decimal
+  costAmount                  Decimal
+  personalSaleShare           Decimal
+  corporatePartnerProfitShare Decimal
+  level1ReferralShare         Decimal
+  level2ReferralShare         Decimal
+  level3ReferralShare         Decimal
+  dateUpdated                 DateTime
+  dateCreated                 DateTime
+  dateRetired                 DateTime?
+  Purchase                    Purchase[]
+  Commission                  Commission[]
+}
+
+model Commission {
+  id        String  @id @unique() @default(uuid()) @db.VarChar(64)
+  userId    String  @db.VarChar(64)
+  product   Product @relation(fields: [productId], references: [id])
+  productId String  @db.VarChar(64)
+  User      User    @relation(fields: [userId], references: [id])
+}
+
+model Purchase {
+  id        String  @id @unique() @default(uuid()) @db.VarChar(64)
+  userId    String  @db.VarChar(64)
+  product   Product @relation(fields: [productId], references: [id])
+  productId String  @db.VarChar(64)
+  User      User    @relation(fields: [userId], references: [id])
+}
+
+model Account {
+  id           String        @id @unique() @default(uuid()) @db.VarChar(64)
+  name         String        @db.VarChar(256)
+  balance      Decimal
+  transactions Transaction[]
+  User         User?         @relation(fields: [userId], references: [id])
+  userId       String?       @db.VarChar(64)
+}
+
+model Transaction {
+  id          String  @id @unique() @default(uuid()) @db.VarChar(64)
+  name        String
+  description String
+  amount      Decimal
+  account     Account @relation(fields: [accountId], references: [id])
+  accountId   String  @db.VarChar(64)
+}
+
+//Enums
+enum RecurringPeriod {
+  DAY
+  WEEK
+  MONTH
+  YEAR
+}
+
+enum UserType {
+  CUSTOMER
+  MENTOR
+  COACH
+  PARTNER
+  CORPORATE_PARTNER
 }
