@@ -77,7 +77,7 @@ model GhlContact {
 
 model User {
   id                         String       @id @unique() @default(uuid()) @db.VarChar(64)
-  uigUserId                  Int
+  uigUserId                  Int          @unique()
   type                       UserType
   role                       UserRole
   hashPassword               String
@@ -105,83 +105,100 @@ model User {
   ghlContacts                GhlContact[]
   transactionTotal           Decimal
   accounts                   Account[]
-  commissionAccountId        String?      @db.VarChar(64)
-  purchaseAccountId          String?      @db.VarChar(64)
-  purchases                  Purchase[]
-  commissions                Commission[]
+  salesAccountId             String?      @db.VarChar(64)
+  sales                      Sale[]       @relation("sellingUser")
+  purchases                  Sale[]       @relation("purchasingUser")
   sessions                   Session[]
+  dateCreated                DateTime     @default(now())
+  dateUpdated                DateTime     @updatedAt
 }
 
 model Product {
-  id                          String           @id @unique() @default(uuid()) @db.VarChar(64)
-  name                        String           @db.VarChar(256)
-  isRecurring                 Boolean          @default(false)
-  billingPeriodLength         Int?
-  billingPeriodUnit           RecurringPeriod?
-  trialPeriodLength           Int?
-  trialPeriodUnit             RecurringPeriod?
-  retailPrice                 Decimal
+  id                      String           @id @unique() @default(uuid()) @db.VarChar(64)
+  name                    String           @db.VarChar(256)
+  isRecurring             Boolean          @default(false)
+  billingPeriodLength     Int?
+  billingPeriodUnit       RecurringPeriod?
+  trialPeriodLength       Int?
+  trialPeriodUnit         RecurringPeriod?
+  retailPrice             Decimal
+  costAmount              Decimal
+  dateCreated             DateTime         @default(now())
+  dateUpdated             DateTime         @updatedAt
+  dateRetired             DateTime?
+  defaultCommissionPlan   CommissionPlan   @relation(fields: [defaultCommissionPlanId], references: [id])
+  defaultCommissionPlanId String           @db.VarChar(64)
+  sales                   Sale[]
+}
+
+model CommissionPlan {
+  id                          String    @id @unique() @default(uuid()) @db.VarChar(64)
+  name                        String    @db.VarChar(256)
   commissionableValueShare    Decimal
-  costAmount                  Decimal
   personalSaleShare           Decimal
   corporatePartnerProfitShare Decimal
   level1ReferralShare         Decimal
   level2ReferralShare         Decimal
   level3ReferralShare         Decimal
-  dateUpdated                 DateTime
-  dateCreated                 DateTime
+  dateCreated                 DateTime  @default(now())
+  dateUpdated                 DateTime  @updatedAt
   dateRetired                 DateTime?
-  Purchase                    Purchase[]
-  Commission                  Commission[]
+  sales                       Sale[]
+  products                    Product[]
 }
 
 //someone could sell for over retail / under retail
-model Commission {
-  id          String        @id @unique() @default(uuid()) @db.VarChar(64)
-  userId      String        @db.VarChar(64)
-  product     Product       @relation(fields: [productId], references: [id])
-  productId   String        @db.VarChar(64)
-  User        User          @relation(fields: [userId], references: [id])
-  Transaction Transaction[]
-}
-
-model Purchase {
-  id          String        @id @unique() @default(uuid()) @db.VarChar(64)
-  userId      String        @db.VarChar(64)
-  product     Product       @relation(fields: [productId], references: [id])
-  productId   String        @db.VarChar(64)
-  User        User          @relation(fields: [userId], references: [id])
-  Transaction Transaction[]
+model Sale {
+  id               String         @id @unique() @default(uuid()) @db.VarChar(64)
+  sellingUserId    String         @db.VarChar(64)
+  sellingUser      User           @relation("sellingUser", fields: [sellingUserId], references: [id])
+  purchasingUserId String
+  purchasingUser   User           @relation("purchasingUser", fields: [purchasingUserId], references: [id])
+  product          Product        @relation(fields: [productId], references: [id])
+  productId        String         @db.VarChar(64)
+  purchasePrice    Decimal
+  trialStartDate   DateTime?
+  billingStartDate DateTime?
+  dateCreated      DateTime       @default(now())
+  dateUpdated      DateTime       @updatedAt
+  dateCancelled    DateTime?
+  transactions     Transaction[]
+  commissionPlan   CommissionPlan @relation(fields: [commissionPlanId], references: [id])
+  commissionPlanId String         @db.VarChar(64)
 }
 
 model Account {
   id           String        @id @unique() @default(uuid()) @db.VarChar(64)
+  type         AccountType
   name         String        @db.VarChar(256)
   balance      Decimal
   transactions Transaction[]
-  User         User?         @relation(fields: [userId], references: [id])
+  user         User?         @relation(fields: [userId], references: [id])
   userId       String?       @db.VarChar(64)
+  dateCreated  DateTime      @default(now())
+  dateUpdated  DateTime      @updatedAt
 }
 
 model Transaction {
-  id           String      @id @unique() @default(uuid()) @db.VarChar(64)
-  name         String
-  description  String
-  amount       Decimal
-  account      Account     @relation(fields: [accountId], references: [id])
-  accountId    String      @db.VarChar(64)
-  commission   Commission? @relation(fields: [commissionId], references: [id])
-  purchase     Purchase?   @relation(fields: [purchaseId], references: [id])
-  commissionId String?     @db.VarChar(64)
-  purchaseId   String?     @db.VarChar(64)
-  dateCreated  DateTime
-  dateCleared  DateTime
+  id          String    @id @unique() @default(uuid()) @db.VarChar(64)
+  name        String
+  description String
+  amount      Decimal
+  account     Account   @relation(fields: [accountId], references: [id])
+  accountId   String    @db.VarChar(64)
+  sale        Sale?     @relation(fields: [saleId], references: [id])
+  saleId      String?   @db.VarChar(64)
+  dateCreated DateTime  @default(now())
+  dateUpdated DateTime  @updatedAt
+  dateCleared DateTime?
 }
 
 model Session {
-  id     String @id @unique() @default(uuid()) @db.VarChar(64)
-  user   User   @relation(fields: [userId], references: [id])
-  userId String @db.VarChar(64)
+  id          String   @id @unique() @default(uuid()) @db.VarChar(64)
+  user        User     @relation(fields: [userId], references: [id])
+  userId      String   @db.VarChar(64)
+  dateCreated DateTime @default(now())
+  dateExpires DateTime
 }
 
 //Enums
@@ -209,4 +226,11 @@ enum ProductType {
   RETAIL
   WHOLESALE
   CUSTOM
+}
+
+enum AccountType {
+  ASSET
+  LIABILITY
+  INCOME
+  EXPENSE
 }
