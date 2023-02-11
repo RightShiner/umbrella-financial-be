@@ -81,9 +81,15 @@ model User {
   type                       UserType
   role                       UserRole
   hashPassword               String
-  referredByUserId           String?      @db.VarChar(64)
-  referredByUser             User?        @relation("referredByUser", fields: [referredByUserId], references: [id])
-  referredUsers              User[]       @relation("referredByUser")
+  level1ReferredByUserId     String?      @db.VarChar(64)
+  level1ReferredByUser       User?        @relation("level1ReferredByUserId", fields: [level1ReferredByUserId], references: [id])
+  level1ReferreUsers         User[]       @relation("level1ReferredByUserId")
+  level2ReferredByUserId     String?      @db.VarChar(64)
+  level2ReferredByUser       User?        @relation("level2ReferredByUserId", fields: [level2ReferredByUserId], references: [id])
+  level2ReferreUsers         User[]       @relation("level2ReferredByUserId")
+  level3ReferredByUserId     String?      @db.VarChar(64)
+  level3ReferredByUser       User?        @relation("level3ReferredByUserId", fields: [level3ReferredByUserId], references: [id])
+  level3ReferreUsers         User[]       @relation("level3ReferredByUserId")
   affiliateStatus            String?      @db.VarChar(16)
   affiliateUrl               String?      @db.VarChar(2048)
   name                       String?      @db.VarChar(128)
@@ -99,8 +105,8 @@ model User {
   ghlContacts                GhlContact[]
   transactionTotal           Decimal
   accounts                   Account[]
-  commissionAccountId        String       @db.VarChar(64)
-  purchaseAccountId          String       @db.VarChar(64)
+  commissionAccountId        String?      @db.VarChar(64)
+  purchaseAccountId          String?      @db.VarChar(64)
   purchases                  Purchase[]
   commissions                Commission[]
   sessions                   Session[]
@@ -129,20 +135,23 @@ model Product {
   Commission                  Commission[]
 }
 
+//someone could sell for over retail / under retail
 model Commission {
-  id        String  @id @unique() @default(uuid()) @db.VarChar(64)
-  userId    String  @db.VarChar(64)
-  product   Product @relation(fields: [productId], references: [id])
-  productId String  @db.VarChar(64)
-  User      User    @relation(fields: [userId], references: [id])
+  id          String        @id @unique() @default(uuid()) @db.VarChar(64)
+  userId      String        @db.VarChar(64)
+  product     Product       @relation(fields: [productId], references: [id])
+  productId   String        @db.VarChar(64)
+  User        User          @relation(fields: [userId], references: [id])
+  Transaction Transaction[]
 }
 
 model Purchase {
-  id        String  @id @unique() @default(uuid()) @db.VarChar(64)
-  userId    String  @db.VarChar(64)
-  product   Product @relation(fields: [productId], references: [id])
-  productId String  @db.VarChar(64)
-  User      User    @relation(fields: [userId], references: [id])
+  id          String        @id @unique() @default(uuid()) @db.VarChar(64)
+  userId      String        @db.VarChar(64)
+  product     Product       @relation(fields: [productId], references: [id])
+  productId   String        @db.VarChar(64)
+  User        User          @relation(fields: [userId], references: [id])
+  Transaction Transaction[]
 }
 
 model Account {
@@ -155,12 +164,18 @@ model Account {
 }
 
 model Transaction {
-  id          String  @id @unique() @default(uuid()) @db.VarChar(64)
-  name        String
-  description String
-  amount      Decimal
-  account     Account @relation(fields: [accountId], references: [id])
-  accountId   String  @db.VarChar(64)
+  id           String      @id @unique() @default(uuid()) @db.VarChar(64)
+  name         String
+  description  String
+  amount       Decimal
+  account      Account     @relation(fields: [accountId], references: [id])
+  accountId    String      @db.VarChar(64)
+  commission   Commission? @relation(fields: [commissionId], references: [id])
+  purchase     Purchase?   @relation(fields: [purchaseId], references: [id])
+  commissionId String?     @db.VarChar(64)
+  purchaseId   String?     @db.VarChar(64)
+  dateCreated  DateTime
+  dateCleared  DateTime
 }
 
 model Session {
@@ -188,4 +203,10 @@ enum UserType {
 enum UserRole {
   ADMIN
   USER
+}
+
+enum ProductType {
+  RETAIL
+  WHOLESALE
+  CUSTOM
 }
