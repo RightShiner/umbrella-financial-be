@@ -141,6 +141,9 @@ CREATE TABLE `CommissionPlan` (
 CREATE TABLE `Sale` (
     `id` VARCHAR(64) NOT NULL,
     `sellingUserId` VARCHAR(64) NOT NULL,
+    `level1SellingUserId` VARCHAR(64) NULL,
+    `level2SellingUserId` VARCHAR(64) NULL,
+    `level3SellingUserId` VARCHAR(64) NULL,
     `purchasingUserId` VARCHAR(191) NOT NULL,
     `productId` VARCHAR(64) NOT NULL,
     `purchasePrice` DECIMAL(65, 30) NOT NULL,
@@ -225,6 +228,15 @@ ALTER TABLE `Product` ADD CONSTRAINT `Product_defaultCommissionPlanId_fkey` FORE
 
 -- AddForeignKey
 ALTER TABLE `Sale` ADD CONSTRAINT `Sale_sellingUserId_fkey` FOREIGN KEY (`sellingUserId`) REFERENCES `User`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `Sale` ADD CONSTRAINT `Sale_level1SellingUserId_fkey` FOREIGN KEY (`level1SellingUserId`) REFERENCES `User`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `Sale` ADD CONSTRAINT `Sale_level2SellingUserId_fkey` FOREIGN KEY (`level2SellingUserId`) REFERENCES `User`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `Sale` ADD CONSTRAINT `Sale_level3SellingUserId_fkey` FOREIGN KEY (`level3SellingUserId`) REFERENCES `User`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE `Sale` ADD CONSTRAINT `Sale_purchasingUserId_fkey` FOREIGN KEY (`purchasingUserId`) REFERENCES `User`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
