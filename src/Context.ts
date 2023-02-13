@@ -1,6 +1,6 @@
-import { PrismaClient } from "@prisma/client";
-import { Request, Response } from "express";
+import { NextFunction, Request, Response } from "express";
 export type Context = {
     response: Response;
     request: Request;
+    next: NextFunction;
 }

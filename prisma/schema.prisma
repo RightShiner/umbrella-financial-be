@@ -83,13 +83,13 @@ model User {
   hashPassword               String
   level1ReferredByUserId     String?      @db.VarChar(64)
   level1ReferredByUser       User?        @relation("level1ReferredByUserId", fields: [level1ReferredByUserId], references: [id])
-  level1ReferreUsers         User[]       @relation("level1ReferredByUserId")
+  level1ReferredUsers        User[]       @relation("level1ReferredByUserId")
   level2ReferredByUserId     String?      @db.VarChar(64)
   level2ReferredByUser       User?        @relation("level2ReferredByUserId", fields: [level2ReferredByUserId], references: [id])
-  level2ReferreUsers         User[]       @relation("level2ReferredByUserId")
+  level2ReferredUsers        User[]       @relation("level2ReferredByUserId")
   level3ReferredByUserId     String?      @db.VarChar(64)
   level3ReferredByUser       User?        @relation("level3ReferredByUserId", fields: [level3ReferredByUserId], references: [id])
-  level3ReferreUsers         User[]       @relation("level3ReferredByUserId")
+  level3ReferredUsers        User[]       @relation("level3ReferredByUserId")
   affiliateStatus            String?      @db.VarChar(16)
   affiliateUrl               String?      @db.VarChar(2048)
   name                       String?      @db.VarChar(128)
@@ -103,10 +103,12 @@ model User {
   ghlUser                    GhlUser?     @relation(fields: [ghlUserId], references: [id])
   ghlSuperCorporateContactId String?      @db.VarChar(32)
   ghlContacts                GhlContact[]
-  transactionTotal           Decimal
   accounts                   Account[]
   salesAccountId             String?      @db.VarChar(64)
   sales                      Sale[]       @relation("sellingUser")
+  level1Sales                Sale[]       @relation("level1SellingUser")
+  level2Sales                Sale[]       @relation("level2SellingUser")
+  level3Sales                Sale[]       @relation("level3SellingUser")
   purchases                  Sale[]       @relation("purchasingUser")
   sessions                   Session[]
   dateCreated                DateTime     @default(now())
@@ -149,22 +151,28 @@ model CommissionPlan {
 
 //someone could sell for over retail / under retail
 model Sale {
-  id               String         @id @unique() @default(uuid()) @db.VarChar(64)
-  sellingUserId    String         @db.VarChar(64)
-  sellingUser      User           @relation("sellingUser", fields: [sellingUserId], references: [id])
-  purchasingUserId String
-  purchasingUser   User           @relation("purchasingUser", fields: [purchasingUserId], references: [id])
-  product          Product        @relation(fields: [productId], references: [id])
-  productId        String         @db.VarChar(64)
-  purchasePrice    Decimal
-  trialStartDate   DateTime?
-  billingStartDate DateTime?
-  dateCreated      DateTime       @default(now())
-  dateUpdated      DateTime       @updatedAt
-  dateCancelled    DateTime?
-  transactions     Transaction[]
-  commissionPlan   CommissionPlan @relation(fields: [commissionPlanId], references: [id])
-  commissionPlanId String         @db.VarChar(64)
+  id                  String         @id @unique() @default(uuid()) @db.VarChar(64)
+  sellingUserId       String         @db.VarChar(64)
+  sellingUser         User           @relation("sellingUser", fields: [sellingUserId], references: [id])
+  level1SellingUserId String?        @db.VarChar(64)
+  level1SellingUser   User?          @relation("level1SellingUser", fields: [level1SellingUserId], references: [id])
+  level2SellingUserId String?        @db.VarChar(64)
+  level2SellingUser   User?          @relation("level2SellingUser", fields: [level2SellingUserId], references: [id])
+  level3SellingUserId String?        @db.VarChar(64)
+  level3SellingUser   User?          @relation("level3SellingUser", fields: [level3SellingUserId], references: [id])
+  purchasingUserId    String
+  purchasingUser      User           @relation("purchasingUser", fields: [purchasingUserId], references: [id])
+  product             Product        @relation(fields: [productId], references: [id])
+  productId           String         @db.VarChar(64)
+  purchasePrice       Decimal
+  trialStartDate      DateTime?
+  billingStartDate    DateTime?
+  dateCreated         DateTime       @default(now())
+  dateUpdated         DateTime       @updatedAt
+  dateCancelled       DateTime?
+  transactions        Transaction[]
+  commissionPlan      CommissionPlan @relation(fields: [commissionPlanId], references: [id])
+  commissionPlanId    String         @db.VarChar(64)
 }
 
 model Account {
