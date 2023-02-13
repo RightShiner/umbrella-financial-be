@@ -4,11 +4,11 @@ export async function handleApiError(context: Context, cb: (context: Context) =>
     try {
         await cb(context);
     } catch (error: any) {
+        console.error(error);
         context.response.json({
             "message": error.message,
             "status": "error"
         });
-        context.response.writeHead(400, error.message);
         context.response.end();
     }
 }
