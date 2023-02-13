@@ -109,6 +109,13 @@ export class UserClient {
                 level2ReferredUsers: true,
                 level3ReferredByUser: true,
                 level3ReferredUsers: true,
+                accounts: {
+                    include: {
+                        transactions: true
+                    }
+                },
+                sales: true,
+                purchases: true
             }
         });
         context.response.json({

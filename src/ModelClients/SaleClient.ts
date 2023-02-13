@@ -28,7 +28,7 @@ export class SaleClient {
         };
         return newSaleData;
     }
-    static async processPurchase(saleData: (Sale & { commissionPlan: CommissionPlan, product: Product, purchasingUser: (User & { accounts: Account[] }) })) {
+    static processPurchase(saleData: (Sale & { commissionPlan: CommissionPlan, product: Product, purchasingUser: (User & { accounts: Account[] }) })) {
         if (saleData.purchasingUser == null) {
             throw new Error("user not found");
         }
@@ -41,30 +41,40 @@ export class SaleClient {
         if (userSalesAccount == null) {
             throw new Error("sales account not found");
         }
-        await prismaClient.transaction.create({
-            data: {
-                name: "Sale Commission",
-                description: "Sale Commission",
-                amount: -saleData.purchasePrice,
-                account: {
-                    connect: {
-                        id: userSalesAccount.id
+        return [
+            prismaClient.transaction.create({
+                data: {
+                    name: "Sale Commission",
+                    description: "Sale Commission",
+                    amount: -saleData.purchasePrice,
+                    account: {
+                        connect: {
+                            id: userSalesAccount.id
+                        },
                     },
-                },
-                sale: {
-                    connect: {
-                        id: saleData.id
+                    sale: {
+                        connect: {
+                            id: saleData.id
+                        }
                     }
                 }
-            }
-        });
+            }),
+            prismaClient.account.update({
+                where: {
+                    id: userSalesAccount.id
+                },
+                data: {
+                    balance: Decimal.sub(userSalesAccount.balance, saleData.purchasePrice)
+                }
+            })
+        ];
     }
-    static async processCommission(saleData: (Sale & { commissionPlan: CommissionPlan, product: Product, sellingUser: (User & { accounts: Account[], level1ReferredByUser: (User & { accounts: Account[] } | null), level2ReferredByUser: (User & { accounts: Account[] } | null), level3ReferredByUser: (User & { accounts: Account[] } | null) }) })) {
+    static processCommission(saleData: (Sale & { commissionPlan: CommissionPlan, product: Product, sellingUser: (User & { accounts: Account[], level1ReferredByUser: (User & { accounts: Account[] } | null), level2ReferredByUser: (User & { accounts: Account[] } | null), level3ReferredByUser: (User & { accounts: Account[] } | null) }) })) {
         const cost = saleData.product.costAmount;
         const purchasePrice = saleData.purchasePrice;
         const retailPrice = saleData.product.retailPrice;
         const commionableValueShare = saleData.commissionPlan.commissionableValueShare;
-        const commionableValue = Decimal.mul(commionableValueShare, Decimal.add(retailPrice, cost));
+        const commionableValue = Decimal.mul(commionableValueShare, Decimal.sub(retailPrice, cost));
 
         const purchasePriceAdjustment = Decimal.sub(purchasePrice, retailPrice);
 
@@ -73,19 +83,19 @@ export class SaleClient {
         if (user == null) {
             throw new Error("user is null");
         }
-        prismaOperations.push(this.processCommissionTransaction(saleData.id, user, Decimal.add(purchasePriceAdjustment, Decimal.mul(saleData.commissionPlan.personalSaleShare, commionableValue))));
+        prismaOperations.push(...SaleClient.processCommissionTransaction(saleData.id, user, Decimal.add(purchasePriceAdjustment, Decimal.mul(saleData.commissionPlan.personalSaleShare, commionableValue))));
         if (user.level1ReferredByUser != null) {
-            prismaOperations.push(this.processCommissionTransaction(saleData.id, user.level1ReferredByUser, Decimal.add(purchasePriceAdjustment, Decimal.mul(saleData.commissionPlan.level1ReferralShare, commionableValue))));
+            prismaOperations.push(...SaleClient.processCommissionTransaction(saleData.id, user.level1ReferredByUser, Decimal.add(purchasePriceAdjustment, Decimal.mul(saleData.commissionPlan.level1ReferralShare, commionableValue))));
         }
         if (user.level2ReferredByUser != null) {
-            prismaOperations.push(this.processCommissionTransaction(saleData.id, user.level2ReferredByUser, Decimal.add(purchasePriceAdjustment, Decimal.mul(saleData.commissionPlan.level2ReferralShare, commionableValue))));
+            prismaOperations.push(...SaleClient.processCommissionTransaction(saleData.id, user.level2ReferredByUser, Decimal.add(purchasePriceAdjustment, Decimal.mul(saleData.commissionPlan.level2ReferralShare, commionableValue))));
         }
         if (user.level3ReferredByUser != null) {
-            prismaOperations.push(this.processCommissionTransaction(saleData.id, user.level3ReferredByUser, Decimal.add(purchasePriceAdjustment, Decimal.mul(saleData.commissionPlan.level3ReferralShare, commionableValue))));
+            prismaOperations.push(...SaleClient.processCommissionTransaction(saleData.id, user.level3ReferredByUser, Decimal.add(purchasePriceAdjustment, Decimal.mul(saleData.commissionPlan.level3ReferralShare, commionableValue))));
         }
         return prismaOperations;
     }
-    static async processCommissionTransaction(saleDataId: string, user: (User & { accounts: Account[] }), amount: Decimal) {
+    static processCommissionTransaction(saleDataId: string, user: (User & { accounts: Account[] }), amount: Decimal) {
         if (user == null) {
             throw new Error("user not found");
         }
@@ -116,9 +126,19 @@ export class SaleClient {
                 }
             }
         };
-        return await prismaClient.transaction.create({
-            data: userCommissionTransaction
-        });
+        return [
+            prismaClient.transaction.create({
+                data: userCommissionTransaction
+            }),
+            prismaClient.account.update({
+                where: {
+                    id: userSalesAccount.id
+                },
+                data: {
+                    balance: Decimal.add(userSalesAccount.balance, amount)
+                }
+            })
+        ];
     }
     static async handlePostRequest(context: Context) {
         console.log(context.request.params);
@@ -160,7 +180,8 @@ export class SaleClient {
                 }
             }
         });
-        await Promise.all([SaleClient.processCommission(sale), SaleClient.processPurchase(sale)]);
+        const prismaOperations = [...SaleClient.processCommission(sale), ...SaleClient.processPurchase(sale)];
+        await prismaClient.$transaction(prismaOperations);
         context.response.json({
             message: "New sale has been created",
             status: "success",
@@ -205,6 +226,11 @@ export class SaleClient {
             status: "success",
             sales: sales
         });
+        context.response.end();
+    }
+    static async deleteAllSales(context: Context) {
+        await prismaClient.sale.deleteMany();
+        await prismaClient.transaction.deleteMany();
         context.response.end();
     }
 }

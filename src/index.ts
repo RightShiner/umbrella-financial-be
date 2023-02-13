@@ -21,6 +21,7 @@ app.get("/users", (req, res, next) => handleApiError({ request: req, response: r
 app.post("/sales", (req, res, next) => handleApiError({ request: req, response: res, next: next }, SaleClient.handlePostRequest));
 app.get("/sales/:id", (req, res, next) => handleApiError({ request: req, response: res, next: next }, SaleClient.handleGetSaleByIdRequest));
 app.get("/sales", (req, res, next) => handleApiError({ request: req, response: res, next: next }, SaleClient.handleGetRequest));
+app.delete("/sales", (req, res, next) => handleApiError({ request: req, response: res, next: next }, SaleClient.deleteAllSales));
 
 app.post("/products", (req, res, next) => handleApiError({ request: req, response: res, next: next }, ProductClient.handlePostRequest));
 app.get("/products/:id", (req, res, next) => handleApiError({ request: req, response: res, next: next }, ProductClient.handleGetProductByIdRequest));
