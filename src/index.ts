@@ -27,5 +27,6 @@ app.post("/user/login", (req, res) => UserClient.login({ request: req, response:
 app.get("/user/:id", (req, res) => UserClient.handleGetRequest({ request: req, response: res }));
 app.post("/totalcom", (req, res) => Commission.totalcom({request:req , response: res}));
 app.post("/tranInit", (req, res) => Commission.tranInit({request:req , response: res}));
+app.post("/customerInit", (req, res) => Commission.custInit({request:req , response: res}));
 
 
