@@ -10,15 +10,6 @@ export class Commission {
             }
         });
       context.response.json({transactionTotal : user?.transactionTotal});
-
-      const transactions = await prismaClient.transaction.findMany({
-        include: { 
-          purchase: true, 
-          commission: true, 
-          account: true 
-        }
-      });
-      console.log(transactions);
   }
   
   static async tranInit (context:Context) {
@@ -30,5 +21,10 @@ export class Commission {
         }
       });
       context.response.json(transactions);
+  }
+
+  static async custInit (context:Context) {
+      const ghlContact = await prismaClient.ghlContact.findMany();
+      context.response.json(ghlContact);
   }
 }
