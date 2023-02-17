@@ -1,32 +1,32 @@
 import { prismaClient } from "./GlobalContext";
 import express from "express";
-import { UserClient } from "./ModelClients/UserClient";
+import { UserClient } from "./Models/User";
 import { handleApiError } from "./Middleware/ErrorHandlerWrapper";
-import { SaleClient } from "./ModelClients/SaleClient";
-import { ProductClient } from "./ModelClients/ProductClient";
-import { CommissionPlanClient } from "./ModelClients/CommissionPlanClient";
+import { Commission } from './Models/commission';
+import {router} from './routes/route';
+var cors = require('cors');
+
 const port = 3003;
 
 const app = express();
+app.use(cors());
 app.use(express.json());
-const server = app.listen(port, () => {
-    `Server is now listening on port ${port}.`
+app.listen(port, () => {
+    console.log(`Server is now listening on port ${port}.`)
 });
 
-app.post("/users", (req, res, next) => handleApiError({ request: req, response: res, next: next }, UserClient.handlePostRequest));
-app.get("/users/:id", (req, res, next) => handleApiError({ request: req, response: res, next: next }, UserClient.handleGetUserByIdRequest));
-app.get("/users/:id/sales", (req, res, next) => handleApiError({ request: req, response: res, next: next }, UserClient.getAllSalesForUser));
-app.get("/users", (req, res, next) => handleApiError({ request: req, response: res, next: next }, UserClient.handleGetRequest));
-
-app.post("/sales", (req, res, next) => handleApiError({ request: req, response: res, next: next }, SaleClient.handlePostRequest));
-app.get("/sales/:id", (req, res, next) => handleApiError({ request: req, response: res, next: next }, SaleClient.handleGetSaleByIdRequest));
-app.get("/sales", (req, res, next) => handleApiError({ request: req, response: res, next: next }, SaleClient.handleGetRequest));
-app.delete("/sales", (req, res, next) => handleApiError({ request: req, response: res, next: next }, SaleClient.deleteAllSales));
-
-app.post("/products", (req, res, next) => handleApiError({ request: req, response: res, next: next }, ProductClient.handlePostRequest));
-app.get("/products/:id", (req, res, next) => handleApiError({ request: req, response: res, next: next }, ProductClient.handleGetProductByIdRequest));
-app.get("/products", (req, res, next) => handleApiError({ request: req, response: res, next: next }, ProductClient.handleGetRequest));
-
-app.post("/commission-plans", (req, res, next) => handleApiError({ request: req, response: res, next: next }, CommissionPlanClient.handlePostRequest));
-app.get("/commission-plans/:id", (req, res, next) => handleApiError({ request: req, response: res, next: next }, CommissionPlanClient.handleGetCommissionPlanByIdRequest));
-app.get("/commission-plans", (req, res, next) => handleApiError({ request: req, response: res, next: next }, CommissionPlanClient.handleGetRequest));
+app.options('/*', (_, res) => {
+    res.setHeader("Access-Control-Allow-Origin", "*");
+    res.setHeader("Access-Control-Allow-Credentials", "true");
+    res.setHeader("Access-Control-Max-Age", "1800");
+    res.setHeader("Access-Control-Allow-Headers", "content-type");
+    res.setHeader("Access-Control-Allow-Methods","PUT, POST, GET, DELETE, PATCH, OPTIONS");
+    res.sendStatus(200);
+});
+app.use(router);
+// app.post("/user", (req, res) => UserClient.handlePostRequest({ request: req, response: res }));
+// app.post("/user/login", (req, res) => UserClient.login({ request: req, response: res }));
+// app.get("/user/:id", (req, res) => UserClient.handleGetRequest({ request: req, response: res }));
+// app.post("/totalcom", (req, res) => Commission.totalcom({request:req , response: res}));
+// app.post("/tranInit", (req, res) => Commission.tranInit({request:req , response: res}));
+// app.post("/customerInit", (req, res) => Commission.custInit({request:req , response: res}));
