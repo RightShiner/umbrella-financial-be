@@ -90,6 +90,68 @@ export class UserClient {
         });
         context.response.end();
     }
+    static async login(context: Context) {
+        //console.log(context);
+        // const headers = {'Content-Type':'application/json',
+        //     'Access-Control-Allow-Origin':'*',
+        //     'Allow':'POST'}
+        //     context.response.setHeader('Access-Control-Allow-Origin', '*');
+        context.response.setHeader("Access-Control-Allow-Origin", "*");
+		context.response.setHeader("Access-Control-Allow-Credentials", "true");
+		context.response.setHeader("Access-Control-Max-Age", "1800");
+		context.response.setHeader("Access-Control-Allow-Headers", "content-type");
+		context.response.setHeader("Access-Control-Allow-Methods","PUT, POST, GET, DELETE, PATCH, OPTIONS");
+        console.log(context.request.body);
+        const userData = context.request.body;
+        const { password, email } = userData;
+        if (!password) {context.response.status(400).json({
+                    message: "no password",
+                    
+                    user : userData
+                });;
+            console.log("error");
+            return;}
+            
+            if (!email) {context.response.status(400).json({
+                    message: "no email.",
+                    
+                    user : userData
+                });;
+                console.log("error");
+                return;}
+
+        const UserExists = await prismaClient.user.findFirst({
+            where: {
+                email: email 
+            }
+        });
+
+        console.log(UserExists);
+        if (!UserExists) {context.response.status(404).json({
+                    message: "user is not exist.",
+                    
+                    user : userData
+                });;
+        return;}
+
+        const compare = (password : string, hashedPassword : string) => compareSync(password, hashedPassword);        
+        if(!compare(password, UserExists.hashPassword)){
+
+             context.response.status(401).json({
+                    message: "Wrong password.",
+                    
+                    user : userData
+                });
+                return;
+        }
+        context.response.json({
+            message: "user is exist",
+            
+            status: "success",
+            user: userData
+        });
+        context.response.end();
+    }
     static async handleGetUserByIdRequest(context: Context) {
         //console.log("params", context.request.params);
         //console.log("query", context.request.query);
