@@ -2,6 +2,8 @@ import { User, Sale, Prisma } from ".prisma/client";
 import { prismaClient } from "../GlobalContext";
 import { Context } from "../Context";
 import { convertToDateOrNull, convertBase64ToJsonOrNull } from "../Utilities";
+import { compare, hash } from "bcrypt";
+import { createJWT } from "../Utilities/createJWT";
 export class UserClient {
     private static validateUserData(saleData: any) {
         const newSaleData: Prisma.UserCreateInput = {
@@ -11,6 +13,15 @@ export class UserClient {
             hashPassword: saleData.hashPassword,
         };
         return newSaleData;
+    }
+    private static exclude<User, Key extends keyof User>(
+        user: User,
+        keys: Key[]
+    ): Omit<User, Key> {
+        for (let key of keys) {
+            delete user[key]
+        }
+        return user
     }
     private static async handleAffiliates(userData: User) {
         if (userData.level1ReferredByUserId == null) {
@@ -50,9 +61,6 @@ export class UserClient {
         const userData = context.request.body;
         await UserClient.handleAffiliates(userData);
 
-        //validate incoming user data
-        delete userData.id;
-
         userData.accounts = {
             create: [
                 {
@@ -62,6 +70,19 @@ export class UserClient {
                 }
             ]
         };
+        if (typeof userData.password !== "string") {
+            context.response.status(400).json({
+                status: "error",
+                message: "No password included in post"
+            })
+        }
+        const hashPassword = await hash(userData.password, 14);
+
+        //validate incoming user data
+        delete userData.id;
+        delete userData.password;
+
+        userData.hashPassword = hashPassword;
         const user = await prismaClient.user.create({
             data: userData,
             include: {
@@ -96,59 +117,79 @@ export class UserClient {
         //     'Access-Control-Allow-Origin':'*',
         //     'Allow':'POST'}
         //     context.response.setHeader('Access-Control-Allow-Origin', '*');
-        context.response.setHeader("Access-Control-Allow-Origin", "*");
-		context.response.setHeader("Access-Control-Allow-Credentials", "true");
-		context.response.setHeader("Access-Control-Max-Age", "1800");
-		context.response.setHeader("Access-Control-Allow-Headers", "content-type");
-		context.response.setHeader("Access-Control-Allow-Methods","PUT, POST, GET, DELETE, PATCH, OPTIONS");
+        /*context.response.setHeader("Access-Control-Allow-Origin", "*");
+        context.response.setHeader("Access-Control-Allow-Credentials", "true");
+        context.response.setHeader("Access-Control-Max-Age", "1800");
+        context.response.setHeader("Access-Control-Allow-Headers", "content-type");
+        context.response.setHeader("Access-Control-Allow-Methods", "PUT, POST, GET, DELETE, PATCH, OPTIONS");*/
         console.log(context.request.body);
         const userData = context.request.body;
-        const { password, email } = userData;
-        if (!password) {context.response.status(400).json({
-                    message: "no password",
-                    
-                    user : userData
-                });;
-            console.log("error");
-            return;}
-            
-            if (!email) {context.response.status(400).json({
-                    message: "no email.",
-                    
-                    user : userData
-                });;
-                console.log("error");
-                return;}
+        const { password, username } = userData;
+        if (!password) {
+            context.response.status(400).json({
+                message: "no password",
 
-        const UserExists = await prismaClient.user.findFirst({
+                user: userData
+            });;
+            console.log("error");
+            return;
+        }
+
+        if (!username) {
+            context.response.status(400).json({
+                message: "no username.",
+
+                user: userData
+            });;
+            console.log("error");
+            return;
+        }
+
+        const user = await prismaClient.user.findFirst({
             where: {
-                email: email 
+                OR: [
+                    {
+                        username: username
+                    },
+                    {
+                        email: username
+                    }
+                ]
+            },
+        });
+        console.log(user);
+        if (!user) {
+            context.response.status(404).json({
+                message: "user does not exist.",
+
+                user: user
+            });
+            return;
+        }
+
+        const comparison = await compare(password, user.hashPassword);
+        if (!comparison) {
+
+            context.response.status(401).json({
+                message: "Wrong password.",
+                user: userData
+            });
+            return;
+        }
+        const session = await prismaClient.session.create({
+            data: {
+                userId: user.id,
+                dateExpires: new Date(Date.now() + Number(process.env.TOKEN_EXPIRE_TIME))
             }
         });
 
-        console.log(UserExists);
-        if (!UserExists) {context.response.status(404).json({
-                    message: "user is not exist.",
-                    
-                    user : userData
-                });;
-        return;}
-
-        const compare = (password : string, hashedPassword : string) => compareSync(password, hashedPassword);        
-        if(!compare(password, UserExists.hashPassword)){
-
-             context.response.status(401).json({
-                    message: "Wrong password.",
-                    
-                    user : userData
-                });
-                return;
-        }
+        UserClient.exclude(user, ["hashPassword"]);
+        const token = await createJWT(session);
         context.response.json({
-            message: "user is exist",
-            
+            message: "Login successful",
             status: "success",
-            user: userData
+            sessionToken: token,
+            user: user
         });
         context.response.end();
     }

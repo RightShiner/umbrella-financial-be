@@ -1,13 +1,17 @@
 import express from "express";
 
-import { UserClient } from "../Models/User";
-import { Commission } from '../Models/commission';
+import { UserClient } from "../ModelClients/UserClient";
+import { ProductClient } from "../ModelClients/ProductClient";
+import { SaleClient } from "../ModelClients/SaleClient";
+import { CommissionPlanClient } from "../ModelClients/CommissionPlanClient";
+import { handleApiError } from "../Middleware/ErrorHandlerWrapper";
+
 
 export const router = express.Router();
 
 
-router.post("/users", (req, res) => UserClient.handlePostRequest({ request: req, response: res }));
-router.post("/users/login", (req, res) => UserClient.login({ request: req, response: res }));
+router.post("/users", (req, res, next) => UserClient.handlePostRequest({ request: req, response: res, next: next }));
+router.post("/users/login", (req, res, next) => UserClient.login({ request: req, response: res, next: next }));
 router.get("/users/:id", (req, res, next) => handleApiError({ request: req, response: res, next: next }, UserClient.handleGetUserByIdRequest));
 router.get("/users/:id/sales", (req, res, next) => handleApiError({ request: req, response: res, next: next }, UserClient.getAllSalesForUser));
 router.get("/users", (req, res, next) => handleApiError({ request: req, response: res, next: next }, UserClient.handleGetRequest));
@@ -24,7 +28,3 @@ router.get("/products", (req, res, next) => handleApiError({ request: req, respo
 router.post("/commission-plans", (req, res, next) => handleApiError({ request: req, response: res, next: next }, CommissionPlanClient.handlePostRequest));
 router.get("/commission-plans/:id", (req, res, next) => handleApiError({ request: req, response: res, next: next }, CommissionPlanClient.handleGetCommissionPlanByIdRequest));
 router.get("/commission-plans", (req, res, next) => handleApiError({ request: req, response: res, next: next }, CommissionPlanClient.handleGetRequest));
-
-router.post("/totalcom", (req, res) => Commission.totalcom({request:req , response: res}));
-router.post("/tranInit", (req, res) => Commission.tranInit({request:req , response: res}));
-router.post("/customerInit", (req, res) => Commission.custInit({request:req , response: res}));

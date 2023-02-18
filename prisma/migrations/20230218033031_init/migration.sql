@@ -72,8 +72,8 @@ CREATE TABLE `GhlContact` (
 -- CreateTable
 CREATE TABLE `User` (
     `id` VARCHAR(64) NOT NULL,
-    `uigUserId` INTEGER NOT NULL,
-    `type` ENUM('CUSTOMER', 'MENTOR', 'COACH', 'PARTNER', 'CORPORATE_PARTNER') NOT NULL,
+    `uigUserId` INTEGER NULL,
+    `type` ENUM('CUSTOMER', 'AFFILIATE', 'MENTOR', 'COACH', 'PARTNER', 'CORPORATE_PARTNER') NOT NULL,
     `role` ENUM('ADMIN', 'USER') NOT NULL,
     `hashPassword` VARCHAR(191) NOT NULL,
     `level1ReferredByUserId` VARCHAR(64) NULL,
@@ -89,13 +89,11 @@ CREATE TABLE `User` (
     `primaryGhlLocationId` VARCHAR(32) NULL,
     `ghlUserId` VARCHAR(32) NULL,
     `ghlSuperCorporateContactId` VARCHAR(32) NULL,
-    `transactionTotal` DECIMAL(65, 30) NOT NULL,
     `salesAccountId` VARCHAR(64) NULL,
     `dateCreated` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
     `dateUpdated` DATETIME(3) NOT NULL,
 
     UNIQUE INDEX `User_id_key`(`id`),
-    UNIQUE INDEX `User_uigUserId_key`(`uigUserId`),
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
@@ -141,9 +139,6 @@ CREATE TABLE `CommissionPlan` (
 CREATE TABLE `Sale` (
     `id` VARCHAR(64) NOT NULL,
     `sellingUserId` VARCHAR(64) NOT NULL,
-    `level1SellingUserId` VARCHAR(64) NULL,
-    `level2SellingUserId` VARCHAR(64) NULL,
-    `level3SellingUserId` VARCHAR(64) NULL,
     `purchasingUserId` VARCHAR(191) NOT NULL,
     `productId` VARCHAR(64) NOT NULL,
     `purchasePrice` DECIMAL(65, 30) NOT NULL,
@@ -228,15 +223,6 @@ ALTER TABLE `Product` ADD CONSTRAINT `Product_defaultCommissionPlanId_fkey` FORE
 
 -- AddForeignKey
 ALTER TABLE `Sale` ADD CONSTRAINT `Sale_sellingUserId_fkey` FOREIGN KEY (`sellingUserId`) REFERENCES `User`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE `Sale` ADD CONSTRAINT `Sale_level1SellingUserId_fkey` FOREIGN KEY (`level1SellingUserId`) REFERENCES `User`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE `Sale` ADD CONSTRAINT `Sale_level2SellingUserId_fkey` FOREIGN KEY (`level2SellingUserId`) REFERENCES `User`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE `Sale` ADD CONSTRAINT `Sale_level3SellingUserId_fkey` FOREIGN KEY (`level3SellingUserId`) REFERENCES `User`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE `Sale` ADD CONSTRAINT `Sale_purchasingUserId_fkey` FOREIGN KEY (`purchasingUserId`) REFERENCES `User`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
