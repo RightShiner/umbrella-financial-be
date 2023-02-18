@@ -220,7 +220,14 @@ export class SaleClient {
         //console.log("params", context.request.params);
         //console.log("query", context.request.query);
 
-        const sales = await prismaClient.sale.findMany();
+        const sales = await prismaClient.sale.findMany({
+            include: {
+                sellingUser: true,
+                purchasingUser: true,
+                product: true,
+                commissionPlan: true
+            }
+        });
         context.response.json({
             message: null,
             status: "success",
